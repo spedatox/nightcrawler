@@ -1,0 +1,24 @@
+name: NightCrawler Hourly Monitor
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # Her saat başı
+  workflow_dispatch:
+
+jobs:
+  run-nightcrawler:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install requirements
+        run: pip install -r requirements.txt
+      - name: Run NightCrawler
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python nightcrawler.py
