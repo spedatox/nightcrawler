@@ -8,6 +8,7 @@ on:
 jobs:
   run-nightcrawler:
     runs-on: ubuntu-latest
+    environment: NightCrawler 
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
