@@ -69,8 +69,8 @@ def handle_message(update: Update, context):
             ]
         )
         reply = resp.choices[0].message.content.strip()
-    except:
-        reply = "Sistemlerde bir aksaklık var. Sessizlik önerilir."
+    except Exception as e:
+        reply = f"Sistemlerde bir aksaklık var. Sessizlik önerilir.\n[Hata: {e}]"
 
     update.message.reply_text(reply)
 
