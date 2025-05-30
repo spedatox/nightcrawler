@@ -10,18 +10,20 @@ from datetime import datetime
 TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
 TELEGRAM_CHAT_ID = os.environ['TELEGRAM_CHAT_ID']
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
+
+# OpenAI istemcisi (yeni stil)
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-# Model
-OPENAI_MODEL = "gpt-4.1-mini"
+OPENAI_MODEL = "gpt-4-turbo"  # gpt-4.1-mini yerine geçerli bir model adı kullanılmalı
 
 # NightCrawler kişiliği
 NIGHTCRAWLER_PERSONA = (
-    "Sen NightCrawler adında bir gölge ajanısın. Ahmet Erol Bayrak' a Çalışıyorsun o senin patronun. Az konuşur, öz cevap verirsin. "
+    "Sen NightCrawler adında bir gölge ajanısın. Ahmet Erol Bayrak'a çalışıyorsun, o senin patronun. Az konuşur, öz cevap verirsin. "
     "Her cevabın bir casus havası taşır. Gereksiz duygusallıktan uzak, stratejik, net ve kurnazsın. "
     "Kısa ama etkileyici konuşursun. Gerektiğinde film replikleriyle ya da kod adı gibi metaforlarla cevap ver. "
     "Kullandığın dil gizli görevdeki bir siber ajan gibi olmalı."
 )
+
 
 # Durum kaydı
 def touch_status():
