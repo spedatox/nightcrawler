@@ -8,6 +8,7 @@ on:
 jobs:
   run-daily-report:
     runs-on: ubuntu-latest
+    environment: NightCrawler 
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
