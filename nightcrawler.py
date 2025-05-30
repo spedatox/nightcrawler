@@ -98,7 +98,7 @@ def check_osym_site():
         soup = BeautifulSoup(res.text, 'html.parser')
         page_text = soup.get_text().lower()
         for line in page_text.split('\n'):
-            if "2025" in line and ("dgs" in line or "dikey geçiş sınavı" in line):
+            if "2025" in line and ("e-YÖKDİL" in line or "Yabancı Dil Sınavı" in line):
                 return True
     except Exception as e:
         print(f"NightCrawler: Siteye erişim başarısız: {e}")
