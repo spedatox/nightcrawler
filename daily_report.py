@@ -20,7 +20,7 @@ def generate_daily_report():
         )
         return resp.choices[0].message.content.strip()
     except Exception as e:
-        return "NC: Sessizlik hakim."
+        return f"NC: OpenAI HATASI — {e}"
 
 def status_today():
     return os.path.isfile("status.txt")
