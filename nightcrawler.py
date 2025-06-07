@@ -27,10 +27,21 @@ NIGHTCRAWLER_PERSONA = (
 def selenium_check_osym_site():
     result = False
     trigger_line = ""
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+    chrome_options = Options()
+    chrome_options.add_argument("--headless=new")  # veya --headless (ikisi de genelde çalışır)
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--window-size=1920,1080")
+    # Her action için unique profile (temp directory)
+    chrome_options.add_argument(f"--user-data-dir=/tmp/chrome_userdata_{int(time.time())}")
+
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+
     try:
         driver.get("https://sonuc.osym.gov.tr")
         time.sleep(3)
+        from bs4 import BeautifulSoup
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         page_text = soup.get_text().lower()
         for line in page_text.split('\n'):
