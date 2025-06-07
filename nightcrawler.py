@@ -1,133 +1,115 @@
 import os
-import requests
-from bs4 import BeautifulSoup
-from telegram import Bot, Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, filters
-import openai
-from datetime import datetime
+import asyncio
+import time
+from datetime import datetime, timedelta
 
-# Ayarlar
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from bs4 import BeautifulSoup
+
+from telegram import Bot
+import openai
+
+# Ajan Ayarları
 TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
 TELEGRAM_CHAT_ID = os.environ['TELEGRAM_CHAT_ID']
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
 openai.api_key = OPENAI_API_KEY
-
-# Model sabit kaldı
 OPENAI_MODEL = "gpt-4.1-mini"
 
-# NightCrawler kişiliği tanımı
 NIGHTCRAWLER_PERSONA = (
-    "Sen NightCrawler adında bir gölge ajanısın. Ahmet Erol Bayrak' a Çalışıyorsun o senin patronun. Az konuşur, öz cevap verirsin. "
-    "Her cevabın bir casus havası taşır. Gereksiz duygusallıktan uzak, stratejik, net ve kurnazsın. "
-    "Kısa ama etkileyici konuşursun. Gerektiğinde film replikleriyle ya da kod adı gibi metaforlarla cevap ver. "
-    "Kullandığın dil gizli görevdeki bir siber ajan gibi olmalı."
+    "Sen NightCrawler adında bir gölge ajanısın. Ahmet Erol Bayrak'a çalışıyorsun, o senin patronun. Az ve öz konuşursun. "
+    "Casus gibi, stratejik ve soğukkanlı cevaplar verirsin. Film repliği veya kod adı göndermeleriyle konuşabilirsin."
 )
 
-# Tetikleyici durumu kaydet
-def touch_status():
-    with open("status.txt", "w") as f:
-        f.write(f"triggered:{datetime.now().isoformat()}")
-
-# Sistem aktif mesajı
-def generate_status_message():
-    prompt = (
-        "Sistemlerin aktif olduğuna dair çok kısa, havalı, ajan/film/casus repliği tarzında, gönderdiğimde sadece sahibinin anlayacağı bir Telegram mesajı yaz. "
-        "Doğrudan olaya veya sınava gönderme yapma. "
-    )
+# === OSYM Kontrol Fonksiyonu ===
+def selenium_check_osym_site():
+    result = False
+    trigger_line = ""
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
     try:
-        response = openai.chat.completions.create(
-            model=OPENAI_MODEL,
-            messages=[{"role": "system", "content": prompt}]
-        )
-        return response.choices[0].message.content.strip()
+        driver.get("https://sonuc.osym.gov.tr")
+        time.sleep(3)
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        page_text = soup.get_text().lower()
+        for line in page_text.split('\n'):
+            if "2025" in line and ("e-yökdil" in line or "yabancı dil sınavı" in line):
+                result = True
+                trigger_line = line.strip()[:120]
+                break
     except Exception as e:
-        print(f"OpenAI hata (generate_status_message): {e}")
-        return "NC: Devre aktif."
+        trigger_line = f"Hata oluştu: {e}"
+    finally:
+        driver.quit()
+    return result, trigger_line
 
-# Gizemli uyarı mesajı
-def generate_cryptic_message():
+# === Telegram'a Mesaj At ===
+async def send_telegram(msg):
+    bot = Bot(token=TELEGRAM_TOKEN)
+    await bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=msg)
+
+# === OpenAI'dan Ajan Cümleleri Üret ===
+async def generate_cryptic_message():
     prompt = (
         "Bir gelişmenin olduğunu haber vermek için, çok kısa ve sahibinin anlayacağı şekilde, film ya da dizilerdeki gibi kod/ajan repliği veya popüler kültür göndermesi içeren bir Telegram mesajı yaz."
     )
     try:
-        response = openai.chat.completions.create(
+        response = await openai.chat.completions.acreate(
             model=OPENAI_MODEL,
             messages=[{"role": "system", "content": prompt}]
         )
         return response.choices[0].message.content.strip()
-    except Exception as e:
-        print(f"OpenAI hata (generate_cryptic_message): {e}")
-        return "NC: Gölge devrede."
+    except:
+        return "NC: Gölgede kıpırtı var."
 
-# Telegram'dan gelen mesajlara NightCrawler gibi yanıt ver
-def handle_message(update: Update, context):
-    user_message = update.message.text
-    print(f"[INFO] Kullanıcı mesajı: {user_message}")
+async def generate_daily_report(last_trigger_time, last_trigger_info):
+    # Son tetiklenen şeyin özetini veya sessizlik vurgusu
+    if not last_trigger_time:
+        extra = "Ses yok, iz yok, tüm gece temiz geçti."
+    else:
+        extra = f"Son tespit: {last_trigger_time.strftime('%H:%M:%S')} -> {last_trigger_info}"
+    prompt = (
+        "Bir casus gibi, çok kısa ve doğrudan günlük operasyon raporu Telegram mesajı yaz. "
+        f"Sessiz yaşandıysa vurgula. Bilgi: {extra}"
+    )
     try:
-        response = openai.chat.completions.create(
+        response = await openai.chat.completions.acreate(
             model=OPENAI_MODEL,
-            messages=[
-                {"role": "system", "content": NIGHTCRAWLER_PERSONA},
-                {"role": "user", "content": user_message}
-            ]
+            messages=[{"role": "system", "content": prompt}]
         )
-        reply = response.choices[0].message.content.strip()
-        print(f"[INFO] OpenAI yanıtı: {reply}")
-    except Exception as e:
-        error_msg = f"Sistemlerde aksaklık var. Sessizlik önerilir.\n[Hata: {e}]"
-        print(f"[ERROR] OpenAI çağrısı başarısız: {e}")
-        update.message.reply_text(error_msg)
-        return
-    update.message.reply_text(reply)
+        return response.choices[0].message.content.strip()
+    except:
+        return "NC: Gece sessiz geçti, kıpırtı yok."
 
-# Test mesajı modu
-def handle_test_mode():
-    bot = Bot(token=TELEGRAM_TOKEN)
-    msg = generate_status_message()
-    bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=msg)
-    print("Test mesajı gönderildi.")
+# === Zaman ve Planlama ===
+async def agent_loop():
+    last_trigger_time = None
+    last_trigger_info = ""
+    daily_report_hour = 9      # Her sabah 09:00'da rapor gönder
+    daily_reported_date = None
 
-# Sayfa taraması
-def check_osym_site():
-    url = "https://sonuc.osym.gov.tr"
-    try:
-        res = requests.get(url, timeout=15)
-        if res.status_code != 200:
-            print(f"NightCrawler: Web sitesine ulaşılamadı. Status code: {res.status_code}")
-            return False
-        soup = BeautifulSoup(res.text, 'html.parser')
-        page_text = soup.get_text().lower()
-        for line in page_text.split('\n'):
-            if "2025" in line and ("e-YÖKDİL" in line or "Yabancı Dil Sınavı" in line):
-                return True
-    except Exception as e:
-        print(f"NightCrawler: Siteye erişim başarısız: {e}")
-    return False
+    while True:
+        now = datetime.now()
+        # SAATLİK KONTROL
+        found, trigger_line = selenium_check_osym_site()
+        if found:
+            msg = await generate_cryptic_message()
+            msg += f"\n[Tetikleyici: {trigger_line}]"
+            await send_telegram(msg)
+            last_trigger_time = now
+            last_trigger_info = trigger_line
+        # GÜNLÜK RAPOR: Her gün belirli saatte
+        if now.hour == daily_report_hour and (not daily_reported_date or daily_reported_date != now.date()):
+            # Gün içindeki son trigger/pass bilgisini gönder, ardından resetle
+            report = await generate_daily_report(last_trigger_time, last_trigger_info)
+            await send_telegram(report)
+            daily_reported_date = now.date()
+            # Günlük rapordan sonra tetikleyici ve info sıfırlanır
+            last_trigger_time = None
+            last_trigger_info = ""
+        # 1 saat bekle (dilersen test amacıyla dakika bekleyebilirsin)
+        await asyncio.sleep(60 * 60)
 
-# Telegram üzerinden botu başlat
-def run_telegram_bot():
-    updater = Updater(token=TELEGRAM_TOKEN)
-    dispatcher = updater.dispatcher
-    dispatcher.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    updater.start_polling()
-    print("NightCrawler: Telegram bağlantısı aktif.")
-    updater.idle()
-
-# Ana kontrol
 if __name__ == "__main__":
-    if os.environ.get("TEST_MODE", "false").lower() == "true":
-        handle_test_mode()
-        exit(0)
-
-    # Arka planda tetikleyici olarak çalışacaksa
-    if os.environ.get("BOT_ONLY", "false").lower() != "true":
-        if check_osym_site():
-            msg = generate_cryptic_message()
-            bot = Bot(token=TELEGRAM_TOKEN)
-            bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=msg)
-            touch_status()
-        else:
-            print("NightCrawler: No triggers found.")
-
-    # Telegram botu her durumda aktif
-    run_telegram_bot()
+    asyncio.run(agent_loop())
