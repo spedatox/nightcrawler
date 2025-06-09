@@ -8,8 +8,6 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
-from webdriver_manager.chrome import ChromeDriverManager
-from bs4 import BeautifulSoup
 
 from telegram import Bot
 import openai
@@ -31,12 +29,11 @@ def selenium_check_osym_site():
     result = False
     trigger_line = ""
     chrome_options = Options()
-    chrome_options.add_argument("--headless=new")  # veya --headless (ikisi de genelde çalışır)
+    chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--window-size=1920,1080")
-    # Her action için unique profile (temp directory)
     chrome_options.add_argument(f"--user-data-dir=/tmp/chrome_userdata_{int(time.time())}")
 
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
@@ -44,7 +41,6 @@ def selenium_check_osym_site():
     try:
         driver.get("https://sonuc.osym.gov.tr")
         time.sleep(3)
-        from bs4 import BeautifulSoup
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         page_text = soup.get_text().lower()
         for line in page_text.split('\n'):
@@ -64,7 +60,8 @@ async def send_telegram(msg):
     await bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=msg)
 
 # === OpenAI'dan Ajan Cümleleri Üret ===
- prompt = (
+async def generate_cryptic_message():
+    prompt = (
         "Bir gelişmenin olduğunu haber vermek için, çok kısa ve sahibinin anlayacağı şekilde, film ya da dizilerdeki gibi kod/ajan repliği veya popüler kültür göndermesi içeren bir Telegram mesajı yaz."
     )
     try:
@@ -77,7 +74,6 @@ async def send_telegram(msg):
         return f"NC: Gölgede kıpırtı var. [OpenAI Hatası: {e}]"
 
 async def generate_daily_report(last_trigger_time, last_trigger_info):
-    # Son tetiklenen şeyin özetini veya sessizlik vurgusu
     if not last_trigger_time:
         extra = "Ses yok, iz yok, tüm gece temiz geçti."
     else:
@@ -99,11 +95,12 @@ async def generate_daily_report(last_trigger_time, last_trigger_info):
 async def agent_loop():
     last_trigger_time = None
     last_trigger_info = ""
-    daily_report_hour = 9      # Her sabah 09:00'da rapor gönder
+    daily_report_hour = 9
     daily_reported_date = None
 
     while True:
         now = datetime.now()
+
         # SAATLİK KONTROL
         found, trigger_line = selenium_check_osym_site()
         if found:
@@ -112,16 +109,15 @@ async def agent_loop():
             await send_telegram(msg)
             last_trigger_time = now
             last_trigger_info = trigger_line
+
         # GÜNLÜK RAPOR: Her gün belirli saatte
         if now.hour == daily_report_hour and (not daily_reported_date or daily_reported_date != now.date()):
-            # Gün içindeki son trigger/pass bilgisini gönder, ardından resetle
             report = await generate_daily_report(last_trigger_time, last_trigger_info)
             await send_telegram(report)
             daily_reported_date = now.date()
-            # Günlük rapordan sonra tetikleyici ve info sıfırlanır
             last_trigger_time = None
             last_trigger_info = ""
-        # 1 saat bekle (dilersen test amacıyla dakika bekleyebilirsin)
+
         await asyncio.sleep(60 * 60)
 
 if __name__ == "__main__":
