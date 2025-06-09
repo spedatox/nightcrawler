@@ -8,9 +8,11 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
+from openai import AsyncOpenAI
 
 from telegram import Bot
 import openai
+client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 # Ajan Ayarları
 TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
@@ -65,7 +67,7 @@ async def generate_cryptic_message():
         "Bir gelişmenin olduğunu haber vermek için, çok kısa ve sahibinin anlayacağı şekilde, film ya da dizilerdeki gibi kod/ajan repliği veya popüler kültür göndermesi içeren bir Telegram mesajı yaz."
     )
     try:
-        response = await openai.chat.completions.acreate(
+        response = await client.chat.completions.create(
             model=OPENAI_MODEL,
             messages=[{"role": "system", "content": prompt}]
         )
