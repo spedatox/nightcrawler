@@ -9,7 +9,7 @@ on:
 jobs:
   run-nightcrawler:
     runs-on: ubuntu-latest
-     environment: NightCrawler
+    environment: NightCrawler
     env:
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
