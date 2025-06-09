@@ -12,7 +12,7 @@ from openai import AsyncOpenAI
 
 from telegram import Bot
 import openai
-client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+
 
 # Ajan Ayarları
 TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
@@ -20,6 +20,7 @@ TELEGRAM_CHAT_ID = os.environ['TELEGRAM_CHAT_ID']
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
 openai.api_key = OPENAI_API_KEY
 OPENAI_MODEL = "gpt-4.1-mini"
+client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 NIGHTCRAWLER_PERSONA = (
     "Sen NightCrawler adında bir gölge ajanısın. Ahmet Erol Bayrak'a çalışıyorsun, o senin patronun. Az ve öz konuşursun. "
