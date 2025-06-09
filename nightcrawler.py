@@ -47,7 +47,7 @@ def selenium_check_osym_site():
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         page_text = soup.get_text().lower()
         for line in page_text.split('\n'):
-            if "2025" in line and ("e-yökdil" in line or "yabancı dil sınavı" in line):
+            if "2025" in line and ("dgs" in line or "dikey geçiş sınavı" in line):
                 result = True
                 trigger_line = line.strip()[:120]
                 break
