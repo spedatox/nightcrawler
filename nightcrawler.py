@@ -64,8 +64,7 @@ async def send_telegram(msg):
     await bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=msg)
 
 # === OpenAI'dan Ajan Cümleleri Üret ===
-async def generate_cryptic_message():
-    prompt = (
+ prompt = (
         "Bir gelişmenin olduğunu haber vermek için, çok kısa ve sahibinin anlayacağı şekilde, film ya da dizilerdeki gibi kod/ajan repliği veya popüler kültür göndermesi içeren bir Telegram mesajı yaz."
     )
     try:
@@ -74,8 +73,8 @@ async def generate_cryptic_message():
             messages=[{"role": "system", "content": prompt}]
         )
         return response.choices[0].message.content.strip()
-    except:
-        return "NC: Gölgede kıpırtı var."
+    except Exception as e:
+        return f"NC: Gölgede kıpırtı var. [OpenAI Hatası: {e}]"
 
 async def generate_daily_report(last_trigger_time, last_trigger_info):
     # Son tetiklenen şeyin özetini veya sessizlik vurgusu
