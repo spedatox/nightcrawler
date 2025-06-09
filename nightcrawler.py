@@ -86,7 +86,7 @@ async def generate_daily_report(last_trigger_time, last_trigger_info):
         f"Sessiz yaşandıysa vurgula. Bilgi: {extra}"
     )
     try:
-        response = await openai.chat.completions.acreate(
+        response = await openai.chat.completions.create(
             model=OPENAI_MODEL,
             messages=[{"role": "system", "content": prompt}]
         )
