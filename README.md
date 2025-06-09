@@ -1,4 +1,4 @@
-# NightCrawler – The Silent Watcher Bot
+# NightCrawler – An AI Powered Silent Watcher Bot
 
 **NightCrawler** is an asynchronous Python bot that periodically monitors a specified results webpage and notifies its operator (Ahmet Erol Bayrak) via Telegram when certain keywords are detected. Inspired by spy films, all messages are written in a cryptic, code-like style using OpenAI.
 
