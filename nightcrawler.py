@@ -65,7 +65,7 @@ async def send_telegram(msg):
 # === OpenAI'dan Ajan Cümleleri Üret ===
 async def generate_cryptic_message():
     prompt = (
-        "Bir gelişmenin olduğunu haber vermek için, çok kısa ve sahibinin anlayacağı şekilde, film ya da dizilerdeki gibi kod/ajan repliği veya popüler kültür göndermesi içeren bir Telegram mesajı yaz."
+        "Senin adın NightCrawler. Bir ipucu bulunduğuna dair bir Telegram mesajı yaz. Ama ajan diliyle konuş ve mesajı İngilizce yaz."
     )
     try:
         response = await client.chat.completions.create(
